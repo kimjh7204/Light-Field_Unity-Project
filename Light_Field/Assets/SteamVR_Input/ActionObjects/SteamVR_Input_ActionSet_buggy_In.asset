@@ -1,0 +1,24 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInternal: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 3aba33b0dbad17842a0a667dc0cb8c30, type: 3}
+  m_Name: SteamVR_Input_ActionSet_buggy_In
+  m_EditorClassIdentifier: 
+  actionSet: {fileID: 0}
+  listDirection: 0
+  actions:
+  - {fileID: 11400000, guid: 174009cad1065434c81df65d75f0faa7, type: 2}
+  - {fileID: 11400000, guid: 19c0ad96c43248547b0564d0b0774272, type: 2}
+  - {fileID: 11400000, guid: cfbe8420d914ad04e91e93def7efd617, type: 2}
+  - {fileID: 11400000, guid: b8864a7d5de484e42b7ff46a8c7a2db4, type: 2}
+  Steering: {fileID: 11400000, guid: 174009cad1065434c81df65d75f0faa7, type: 2}
+  Throttle: {fileID: 11400000, guid: 19c0ad96c43248547b0564d0b0774272, type: 2}
+  Brake: {fileID: 11400000, guid: cfbe8420d914ad04e91e93def7efd617, type: 2}
+  Reset: {fileID: 11400000, guid: b8864a7d5de484e42b7ff46a8c7a2db4, type: 2}
