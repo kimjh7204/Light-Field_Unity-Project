@@ -13,6 +13,8 @@ public class CoreImplemantaion : MonoBehaviour
    public Texture2DArray[] Back;
    public Texture2DArray[] Left;
 
+   public Texture2DArray[] front1temp;
+
    private Vector3 initialCameraPos;
 
    private enum SmallAreaPosition_y { top, mid, bottom };
@@ -130,11 +132,22 @@ public class CoreImplemantaion : MonoBehaviour
 
    void Start()
    {
+      // System.Diagnostics.Stopwatch sw = new System.Diagnostics.Stopwatch();
+      // sw.Start();
+      // Front[0] = Resources.Load("Back_0") as Texture2DArray;
+      // Debug.Log(sw.ElapsedMilliseconds.ToString());
+      // Front[1] = Resources.Load("Back_1") as Texture2DArray;
+      // Debug.Log(sw.ElapsedMilliseconds.ToString());
+      // Front[2] = Resources.Load("Back_2") as Texture2DArray;
+      // Debug.Log(sw.ElapsedMilliseconds.ToString());
+
+      front_plain.SetTexture(Texture_property, Front[1]);
+
       initialCameraPos = cameraTransform.position;
       ViewPlainCenter.rotation = Quaternion.Euler(0, cameraTransform.rotation.eulerAngles.y, 0);
 
       // [0,X] : front, [1,X] : right, [2,X] : back, [3,X] : left
-      imageDepth = new float[4, 3]{ {66.2f, 66.3f, 65.7f},
+      imageDepth = new float[4, 3]{ {66.2f, 331.5f, 65.7f},
                                       {64.0f, 64.5f, 64.6f},
                                       {65.3f, 66.3f, 66.0f},
                                       {62.4f, 63.3f, 63.9f} };
