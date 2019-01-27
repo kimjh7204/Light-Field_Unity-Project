@@ -13,8 +13,6 @@ public class CoreImplemantaion : MonoBehaviour
    public Texture2DArray[] Back;
    public Texture2DArray[] Left;
 
-   public Texture2DArray[] front1temp;
-
    private Vector3 initialCameraPos;
 
    private enum SmallAreaPosition_y { top, mid, bottom };
@@ -126,6 +124,8 @@ public class CoreImplemantaion : MonoBehaviour
    private int Distance_property;
    private int HorizontalPositon_property;
    private int Texture_property;
+   private int Texture_property_R;
+   private int Texture_property_L;
    private int PositionDelta_property;
 
    private float[,] imageDepth;
@@ -141,13 +141,13 @@ public class CoreImplemantaion : MonoBehaviour
       // Front[2] = Resources.Load("Back_2") as Texture2DArray;
       // Debug.Log(sw.ElapsedMilliseconds.ToString());
 
-      front_plain.SetTexture(Texture_property, Front[1]);
+
 
       initialCameraPos = cameraTransform.position;
       ViewPlainCenter.rotation = Quaternion.Euler(0, cameraTransform.rotation.eulerAngles.y, 0);
 
       // [0,X] : front, [1,X] : right, [2,X] : back, [3,X] : left
-      imageDepth = new float[4, 3]{ {66.2f, 331.5f, 65.7f},
+      imageDepth = new float[4, 3]{ {66.2f, 660f, 65.7f},
                                       {64.0f, 64.5f, 64.6f},
                                       {65.3f, 66.3f, 66.0f},
                                       {62.4f, 63.3f, 63.9f} };
@@ -158,7 +158,13 @@ public class CoreImplemantaion : MonoBehaviour
       Distance_property = Shader.PropertyToID("Vector1_A1C90C0E");
       HorizontalPositon_property = Shader.PropertyToID("Vector1_DF5BD731");
       Texture_property = Shader.PropertyToID("Texture2DArray_F092712C");
+      Texture_property_L = Shader.PropertyToID("Texture2DArray_5C3CC0FC");
+      Texture_property_R = Shader.PropertyToID("Texture2DArray_4CAF86FE");
       PositionDelta_property = Shader.PropertyToID("Vector1_14AEA0F9");
+
+      front_plain.SetTexture(Texture_property, Front[1]);
+      front_plain.SetTexture(Texture_property_L, Front[0]);
+      front_plain.SetTexture(Texture_property_R, Front[2]);
    }
 
    void Update()
