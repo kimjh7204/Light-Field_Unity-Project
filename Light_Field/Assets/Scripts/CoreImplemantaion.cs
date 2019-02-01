@@ -1,6 +1,7 @@
 ﻿using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
+using System.IO;
 
 public class CoreImplemantaion : MonoBehaviour
 {
@@ -8,114 +9,163 @@ public class CoreImplemantaion : MonoBehaviour
    public Transform cameraTransform;
    public Transform ViewPlainCenter;
 
-   public Texture2DArray[] Front;
-   public Texture2DArray[] Right;
-   public Texture2DArray[] Back;
-   public Texture2DArray[] Left;
+   public List<Texture2DArray> cache;
 
-   private Vector3 initialCameraPos;
+   public Vector2 InitialPosition;
 
-   private enum SmallAreaPosition_y { top, mid, bottom };
-   private enum SmallAreaPosition_x { left, mid, right };
+   private SegmentCache cache1;
+
+   private Vector3 cameraPosOffset;
+
+   private Vector3Int LFUCoor;
 
    private const float fixedAreaLength = 9.5f;
+   private const float SegmentLength = 1.9f;
 
-   private SmallAreaPosition_x smallArea_x;
-   private SmallAreaPosition_y smallArea_y;
-   private Vector2 offset;
-
-   private Vector2 position;
-   private Vector2 AdjustedPosition
+   private Vector2 _LF_GlobalPosition;
+   private Vector2 LF_GlobalPosition
    {
-      get { return position + offset; }
+      get { return _LF_GlobalPosition; }
       set
       {
-         position = value;
+         _LF_GlobalPosition = value;
 
-         if (position.y > fixedAreaLength * 0.1f)
-         {
-            if (smallArea_y != SmallAreaPosition_y.top)
-            {
-               smallArea_y = SmallAreaPosition_y.top;
-               offset.y = -fixedAreaLength * 0.2f;
+         Vector3Int tempLFUCoor = Vector3Int.zero;
+         tempLFUCoor.x = Mathf.FloorToInt(_LF_GlobalPosition.x / SegmentLength);
+         tempLFUCoor.y = Mathf.FloorToInt(_LF_GlobalPosition.y / SegmentLength);
 
-               front_plain.SetTexture(Texture_property, Front[0]);
-               back_plain.SetTexture(Texture_property, Back[2]);
+         Vector2 lfuLocalPosition;
+         lfuLocalPosition.x = _LF_GlobalPosition.x - tempLFUCoor.x * SegmentLength;
+         lfuLocalPosition.y = _LF_GlobalPosition.y - tempLFUCoor.y * SegmentLength;
 
-               front_plain.SetFloat(PositionDelta_property, fixedAreaLength / imageDepth[0, 0]);
-               back_plain.SetFloat(PositionDelta_property, fixedAreaLength / imageDepth[2, 2]);
-            }
-         }
-         else if (position.y < -fixedAreaLength * 0.1f)
-         {
-            if (smallArea_y != SmallAreaPosition_y.bottom)
-            {
-               smallArea_y = SmallAreaPosition_y.bottom;
-               offset.y = fixedAreaLength * 0.2f;
+         front_plain.SetFloat(Distance_property, SegmentLength - lfuLocalPosition.y);
+         front_plain.SetFloat(HorizontalPositon_property, _LF_GlobalPosition.x);
 
-               front_plain.SetTexture(Texture_property, Front[2]);
-               back_plain.SetTexture(Texture_property, Back[0]);
+         back_plain.SetFloat(Distance_property, lfuLocalPosition.y);
+         back_plain.SetFloat(HorizontalPositon_property, fixedAreaLength - _LF_GlobalPosition.x);
 
-               front_plain.SetFloat(PositionDelta_property, fixedAreaLength / imageDepth[0, 2]);
-               back_plain.SetFloat(PositionDelta_property, fixedAreaLength / imageDepth[2, 0]);
-            }
-         }
+         right_plain.SetFloat(Distance_property, SegmentLength - lfuLocalPosition.x);
+         right_plain.SetFloat(HorizontalPositon_property, fixedAreaLength - _LF_GlobalPosition.y);
+
+         left_plain.SetFloat(Distance_property, lfuLocalPosition.x);
+         left_plain.SetFloat(HorizontalPositon_property, _LF_GlobalPosition.y);
+
+         if (lfuLocalPosition.y > lfuLocalPosition.x)
+            tempLFUCoor.z = 0;
          else
+            tempLFUCoor.z = 1;
+
+         if (lfuLocalPosition.y < -lfuLocalPosition.x + 1)
+            tempLFUCoor.z += 2;
+
+         if (tempLFUCoor != LFUCoor)
          {
-            if (smallArea_y != SmallAreaPosition_y.mid)
+            LFUCoor = tempLFUCoor;
+
+            int tempX = LFUCoor.x;
+            int tempY = LFUCoor.y;
+
+
+            front_plain.SetFloat(PositionDelta_property, fixedAreaLength / imageDepth[0, 3 - LFUCoor.y]);
+            right_plain.SetFloat(PositionDelta_property, fixedAreaLength / imageDepth[1, 3 - LFUCoor.x]);
+            left_plain.SetFloat(PositionDelta_property, fixedAreaLength / imageDepth[2, LFUCoor.x - 1]);
+            back_plain.SetFloat(PositionDelta_property, fixedAreaLength / imageDepth[3, LFUCoor.y - 1]);
+            for (int i = 0; i < 4; i++)
             {
-               smallArea_y = SmallAreaPosition_y.mid;
-               offset.y = 0.0f;
-
-               front_plain.SetTexture(Texture_property, Front[1]);
-               back_plain.SetTexture(Texture_property, Back[1]);
-
-               front_plain.SetFloat(PositionDelta_property, fixedAreaLength / imageDepth[0, 1]);
-               back_plain.SetFloat(PositionDelta_property, fixedAreaLength / imageDepth[2, 1]);
+               cache1.LoadSegment(tempX, tempY, i);
             }
-         }
+            back_plain.SetTexture(Texture_property, cache1.GetSegment(tempX, tempY, 3));
+            left_plain.SetTexture(Texture_property, cache1.GetSegment(tempX, tempY, 2));
+            front_plain.SetTexture(Texture_property, cache1.GetSegment(tempX, tempY, 0));
+            right_plain.SetTexture(Texture_property, cache1.GetSegment(tempX, tempY, 1));
 
-         if (position.x > fixedAreaLength * 0.1f)
-         {
-            if (smallArea_x != SmallAreaPosition_x.right)
+
+
+            if (LFUCoor.z == 0)
             {
-               smallArea_x = SmallAreaPosition_x.right;
-               offset.x = -fixedAreaLength * 0.2f;
+               for (int i = 0; i < 4; i++)
+               {
+                  cache1.LoadSegment(tempX, tempY + 1, i);
+               }
 
-               right_plain.SetTexture(Texture_property, Right[0]);
-               left_plain.SetTexture(Texture_property, Left[2]);
+               cache1.LoadSegment(tempX - 1, tempY + 1, 0);
+               cache1.LoadSegment(tempX + 1, tempY + 1, 0);
+               cache1.LoadSegment(tempX - 1, tempY, 0);
+               cache1.LoadSegment(tempX + 1, tempY, 0);
+               cache1.LoadSegment(tempX - 1, tempY, 3);
+               cache1.LoadSegment(tempX + 1, tempY, 3);
+               cache1.LoadSegment(tempX, tempY - 1, 1);
+               cache1.LoadSegment(tempX, tempY - 1, 2);
 
-               right_plain.SetFloat(PositionDelta_property, fixedAreaLength / imageDepth[1, 0]);
-               left_plain.SetFloat(PositionDelta_property, fixedAreaLength / imageDepth[3, 2]);
+               back_plain.SetTexture(Texture_property_L, cache1.GetSegment(tempX + 1, tempY, 3));
+               back_plain.SetTexture(Texture_property_R, cache1.GetSegment(tempX - 1, tempY, 3));
+               right_plain.SetTexture(Texture_property_L, cache1.GetSegment(tempX, tempY + 1, 1));
+               left_plain.SetTexture(Texture_property_R, cache1.GetSegment(tempX, tempY + 1, 2));
             }
-         }
-         else if (position.x < -fixedAreaLength * 0.1f)
-         {
-            if (smallArea_x != SmallAreaPosition_x.left)
+            if (LFUCoor.z == 1)
             {
-               smallArea_x = SmallAreaPosition_x.left;
-               offset.x = fixedAreaLength * 0.2f;
+               for (int i = 0; i < 4; i++)
+               {
+                  cache1.LoadSegment(tempX + 1, tempY, i);
+               }
 
-               right_plain.SetTexture(Texture_property, Right[2]);
-               left_plain.SetTexture(Texture_property, Left[0]);
+               cache1.LoadSegment(tempX + 1, tempY - 1, 1);
+               cache1.LoadSegment(tempX + 1, tempY + 1, 1);
+               cache1.LoadSegment(tempX, tempY - 1, 1);
+               cache1.LoadSegment(tempX, tempY + 1, 1);
+               cache1.LoadSegment(tempX, tempY - 1, 2);
+               cache1.LoadSegment(tempX, tempY + 1, 2);
+               cache1.LoadSegment(tempX - 1, tempY, 0);
+               cache1.LoadSegment(tempX - 1, tempY, 3);
 
-               right_plain.SetFloat(PositionDelta_property, fixedAreaLength / imageDepth[1, 2]);
-               left_plain.SetFloat(PositionDelta_property, fixedAreaLength / imageDepth[3, 0]);
+               left_plain.SetTexture(Texture_property_R, cache1.GetSegment(tempX, tempY + 1, 2));
+               left_plain.SetTexture(Texture_property_L, cache1.GetSegment(tempX, tempY - 1, 2));
+               front_plain.SetTexture(Texture_property_L, cache1.GetSegment(tempX + 1, tempY, 0));
+               back_plain.SetTexture(Texture_property_R, cache1.GetSegment(tempX + 1, tempY, 3));
             }
-         }
-         else
-         {
-            if (smallArea_x != SmallAreaPosition_x.mid)
+            if (LFUCoor.z == 2)
             {
-               smallArea_x = SmallAreaPosition_x.mid;
-               offset.x = 0.0f;
+               for (int i = 0; i < 4; i++)
+               {
+                  cache1.LoadSegment(tempX - 1, tempY, i);
+               }
 
-               right_plain.SetTexture(Texture_property, Right[1]);
-               left_plain.SetTexture(Texture_property, Left[1]);
+               cache1.LoadSegment(tempX - 1, tempY + 1, 2);
+               cache1.LoadSegment(tempX - 1, tempY - 1, 2);
+               cache1.LoadSegment(tempX, tempY - 1, 1);
+               cache1.LoadSegment(tempX, tempY + 1, 1);
+               cache1.LoadSegment(tempX, tempY - 1, 2);
+               cache1.LoadSegment(tempX, tempY + 1, 2);
+               cache1.LoadSegment(tempX + 1, tempY, 0);
+               cache1.LoadSegment(tempX + 1, tempY, 3);
 
-               right_plain.SetFloat(PositionDelta_property, fixedAreaLength / imageDepth[1, 1]);
-               left_plain.SetFloat(PositionDelta_property, fixedAreaLength / imageDepth[3, 1]);
+               right_plain.SetTexture(Texture_property_L, cache1.GetSegment(tempX, tempY + 1, 1));
+               right_plain.SetTexture(Texture_property_R, cache1.GetSegment(tempX, tempY - 1, 1));
+               front_plain.SetTexture(Texture_property_L, cache1.GetSegment(tempX - 1, tempY, 0));
+               back_plain.SetTexture(Texture_property_R, cache1.GetSegment(tempX - 1, tempY, 3));
             }
+            if (LFUCoor.z == 3)
+            {
+               for (int i = 0; i < 4; i++)
+               {
+                  cache1.LoadSegment(tempX, tempY - 1, i);
+               }
+
+               cache1.LoadSegment(tempX - 1, tempY - 1, 3);
+               cache1.LoadSegment(tempX + 1, tempY - 1, 3);
+               cache1.LoadSegment(tempX - 1, tempY, 0);
+               cache1.LoadSegment(tempX + 1, tempY, 0);
+               cache1.LoadSegment(tempX - 1, tempY, 3);
+               cache1.LoadSegment(tempX + 1, tempY, 3);
+               cache1.LoadSegment(tempX, tempY + 1, 1);
+               cache1.LoadSegment(tempX, tempY + 1, 2);
+
+               front_plain.SetTexture(Texture_property_L, cache1.GetSegment(tempX - 1, tempY, 0));
+               front_plain.SetTexture(Texture_property_R, cache1.GetSegment(tempX + 1, tempY, 0));
+               right_plain.SetTexture(Texture_property_L, cache1.GetSegment(tempX, tempY - 1, 1));
+               left_plain.SetTexture(Texture_property_R, cache1.GetSegment(tempX, tempY - 1, 2));
+            }
+
          }
       }
    }
@@ -132,25 +182,25 @@ public class CoreImplemantaion : MonoBehaviour
 
    void Start()
    {
-      // System.Diagnostics.Stopwatch sw = new System.Diagnostics.Stopwatch();
-      // sw.Start();
       // Front[0] = Resources.Load("Back_0") as Texture2DArray;
       // Debug.Log(sw.ElapsedMilliseconds.ToString());
       // Front[1] = Resources.Load("Back_1") as Texture2DArray;
       // Debug.Log(sw.ElapsedMilliseconds.ToString());
       // Front[2] = Resources.Load("Back_2") as Texture2DArray;
-      // Debug.Log(sw.ElapsedMilliseconds.ToString());
 
+      cache = new List<Texture2DArray>();
+      cache1 = new SegmentCache(16);
 
+      cameraPosOffset = cameraTransform.position;
+      cameraTransform.position = new Vector3(InitialPosition.x, 0f, InitialPosition.y);
 
-      initialCameraPos = cameraTransform.position;
       ViewPlainCenter.rotation = Quaternion.Euler(0, cameraTransform.rotation.eulerAngles.y, 0);
 
-      // [0,X] : front, [1,X] : right, [2,X] : back, [3,X] : left
-      imageDepth = new float[4, 3]{ {66.2f, 660f, 65.7f},
-                                      {64.0f, 64.5f, 64.6f},
-                                      {65.3f, 66.3f, 66.0f},
-                                      {62.4f, 63.3f, 63.9f} };
+      // [0,X] : front, [1,X] : right, [2,X] : left, [3,X] : back
+      imageDepth = new float[4, 3]{ {662f, 660f, 657f},
+                                      {640f, 645f, 646f},
+                                      {624f, 633f, 639f},
+                                      {653f, 663f, 660f} };
 
 
       //프로퍼티 이름으로 부터 ID를 추출 합니다.
@@ -162,27 +212,89 @@ public class CoreImplemantaion : MonoBehaviour
       Texture_property_R = Shader.PropertyToID("Texture2DArray_4CAF86FE");
       PositionDelta_property = Shader.PropertyToID("Vector1_14AEA0F9");
 
-      front_plain.SetTexture(Texture_property, Front[1]);
-      front_plain.SetTexture(Texture_property_L, Front[0]);
-      front_plain.SetTexture(Texture_property_R, Front[2]);
+      //front_plain.SetTexture(Texture_property, Front[1]);
+      //front_plain.SetTexture(Texture_property_L, Front[0]);
+      //front_plain.SetTexture(Texture_property_R, Front[2]);
    }
 
    void Update()
    {
       ViewPlainCenter.position = cameraTransform.position;
 
-      AdjustedPosition = new Vector2(cameraTransform.position.x - initialCameraPos.x, cameraTransform.position.z - initialCameraPos.z) * 10f;
+      LF_GlobalPosition = new Vector2(cameraTransform.position.x - cameraPosOffset.x, cameraTransform.position.z - cameraPosOffset.z);
 
-      front_plain.SetFloat(Distance_property, fixedAreaLength * 0.1f - AdjustedPosition.y);
-      front_plain.SetFloat(HorizontalPositon_property, fixedAreaLength * 0.5f + position.x);
 
-      back_plain.SetFloat(Distance_property, fixedAreaLength * 0.1f + AdjustedPosition.y);
-      back_plain.SetFloat(HorizontalPositon_property, fixedAreaLength * 0.5f - position.x);
 
-      right_plain.SetFloat(Distance_property, fixedAreaLength * 0.1f - AdjustedPosition.x);
-      right_plain.SetFloat(HorizontalPositon_property, fixedAreaLength * 0.5f - position.y);
+      if (Input.GetKeyDown(KeyCode.A))
+      {
+         LoadSegment1();
+      }
+      if (Input.GetKeyDown(KeyCode.S))
+      {
 
-      left_plain.SetFloat(Distance_property, fixedAreaLength * 0.1f + AdjustedPosition.x);
-      left_plain.SetFloat(HorizontalPositon_property, fixedAreaLength * 0.5f + position.y);
+         LoadSegment2();
+
+      }
+      if (Input.GetKeyDown(KeyCode.D))
+      {
+         LoadSegment3();
+
+      }
+   }
+
+   private void LoadSegment1()
+   {
+      Debug.Log("StartLoad");
+      System.Diagnostics.Stopwatch sw = new System.Diagnostics.Stopwatch();
+      sw.Start();
+      cache.Add(Resources.Load<Texture2DArray>("BackTest_1"));
+      Debug.Log("Segment Load Time : " + sw.ElapsedMilliseconds.ToString() + "ms/segment");
+      sw.Reset();
+      sw.Start();
+      front_plain.SetTexture(Texture_property_L, cache[0]);
+      Debug.Log("Segment Apply Time : " + sw.ElapsedMilliseconds.ToString() + "ms/segment");
+      sw.Stop();
+   }
+   private void LoadSegment2()
+   {
+      Debug.Log("StartLoad");
+      System.Diagnostics.Stopwatch sw = new System.Diagnostics.Stopwatch();
+      sw.Start();
+      cache.Add(Resources.Load<Texture2DArray>("BackTest_2"));
+      Debug.Log("Segment Load Time : " + sw.ElapsedMilliseconds.ToString() + "ms/segment");
+      sw.Reset();
+      sw.Start();
+      front_plain.SetTexture(Texture_property, cache[1]);
+      Debug.Log("Segment Apply Time : " + sw.ElapsedMilliseconds.ToString() + "ms/segment");
+      sw.Stop();
+   }
+   private void LoadSegment3()
+   {
+      Debug.Log("StartLoad");
+      System.Diagnostics.Stopwatch sw = new System.Diagnostics.Stopwatch();
+      sw.Start();
+      cache.Add(Resources.Load<Texture2DArray>("BackTest_3"));
+      Debug.Log("Segment Load Time : " + sw.ElapsedMilliseconds.ToString() + "ms/segment");
+      sw.Reset();
+      sw.Start();
+      front_plain.SetTexture(Texture_property_R, cache[2]);
+      Debug.Log("Segment Apply Time : " + sw.ElapsedMilliseconds.ToString() + "ms/segment");
+      sw.Stop();
+   }
+
+   private void OnDestroy()
+   {
+      front_plain.SetTexture(Texture_property_R, null);
+      front_plain.SetTexture(Texture_property_L, null);
+      front_plain.SetTexture(Texture_property, null);
+      right_plain.SetTexture(Texture_property_R, null);
+      right_plain.SetTexture(Texture_property_L, null);
+      right_plain.SetTexture(Texture_property, null);
+      left_plain.SetTexture(Texture_property_R, null);
+      left_plain.SetTexture(Texture_property_L, null);
+      left_plain.SetTexture(Texture_property, null);
+      back_plain.SetTexture(Texture_property_R, null);
+      back_plain.SetTexture(Texture_property_L, null);
+      back_plain.SetTexture(Texture_property, null);
    }
 }
