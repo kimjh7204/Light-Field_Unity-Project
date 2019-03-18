@@ -10,13 +10,13 @@
             "typeInfo": {
                 "fullName": "UnityEditor.ShaderGraph.Texture2DArrayShaderProperty"
             },
-            "JSONnodeData": "{\n    \"m_Value\": {\n        \"m_SerializedTexture\": \"\",\n        \"m_Guid\": \"aee55853818e87a41b409e80e7bd6324\"\n    },\n    \"m_Name\": \"Texture2D Array\",\n    \"m_GeneratePropertyBlock\": true,\n    \"m_Guid\": {\n        \"m_GuidSerialized\": \"8ddd2d05-c40b-4174-8559-dc2c607980ff\"\n    },\n    \"m_OverrideReferenceName\": \"\",\n    \"m_Modifiable\": true\n}"
+            "JSONnodeData": "{\n    \"m_Value\": {\n        \"m_SerializedTexture\": \"\",\n        \"m_Guid\": \"0b20b45580901ae479b1e5fef8067e27\"\n    },\n    \"m_Name\": \"Texture2D Array_L\",\n    \"m_GeneratePropertyBlock\": true,\n    \"m_Guid\": {\n        \"m_GuidSerialized\": \"137a62f5-14bc-4f98-bae5-7d823976d779\"\n    },\n    \"m_OverrideReferenceName\": \"\",\n    \"m_Modifiable\": true\n}"
         },
         {
             "typeInfo": {
                 "fullName": "UnityEditor.ShaderGraph.Texture2DArrayShaderProperty"
             },
-            "JSONnodeData": "{\n    \"m_Value\": {\n        \"m_SerializedTexture\": \"\",\n        \"m_Guid\": \"0b20b45580901ae479b1e5fef8067e27\"\n    },\n    \"m_Name\": \"Texture2D Array_L\",\n    \"m_GeneratePropertyBlock\": true,\n    \"m_Guid\": {\n        \"m_GuidSerialized\": \"137a62f5-14bc-4f98-bae5-7d823976d779\"\n    },\n    \"m_OverrideReferenceName\": \"\",\n    \"m_Modifiable\": true\n}"
+            "JSONnodeData": "{\n    \"m_Value\": {\n        \"m_SerializedTexture\": \"\",\n        \"m_Guid\": \"aee55853818e87a41b409e80e7bd6324\"\n    },\n    \"m_Name\": \"Texture2D Array\",\n    \"m_GeneratePropertyBlock\": true,\n    \"m_Guid\": {\n        \"m_GuidSerialized\": \"8ddd2d05-c40b-4174-8559-dc2c607980ff\"\n    },\n    \"m_OverrideReferenceName\": \"\",\n    \"m_Modifiable\": true\n}"
         },
         {
             "typeInfo": {
